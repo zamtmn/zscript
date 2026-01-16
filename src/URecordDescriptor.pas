@@ -487,6 +487,7 @@ begin
                            tname:=pfd^.base.ProgramName;
 //           if tname='Geometry' then
 //                                   tname:=tname;
+           PUTDOverrider:=PTUserTypeDescriptor(getRecTypeDescriptorOverrider(pfd^.base.PFT^.GetFactTypedef));
            if (pfd^.base.PFT^.GetFactTypedef^.TypeName='TEnumData') or
               (pfd^.base.PFT^.GetFactTypedef^.TypeName='TEnumDataWithOtherData') then
                        begin
@@ -498,7 +499,17 @@ begin
                             GDBEnumDataDescriptorObj.Decorators:=SaveDecorators;
                             GDBEnumDataDescriptorObj.FastEditors:=SaveFastEditors;
                        end
+           else if PUTDOverrider<>nil then begin {end else if (PTUserTypeDescriptor(pvd^.data.PTD)^.GetFactTypedef^.TypeName='TCalculatedString')then begin}
+             SaveDecorators:=PUTDOverrider.Decorators;
+             SaveFastEditors:=PUTDOverrider.FastEditors;
+             PUTDOverrider.Decorators:=pfd^.base.PFT^.Decorators;
+             PUTDOverrider.FastEditors:=pfd^.base.PFT^.FastEditors;
+             PUTDOverrider.CreateProperties(f,PDM_Field,PPDA,tname,@pfd^.collapsed,pfd^.base.Attributes+ownerattrib,bmode,startaddr,'','');
+             PUTDOverrider.Decorators:=SaveDecorators;
+             PUTDOverrider.FastEditors:=SaveFastEditors;
+           end
                    else
+
            if pfd^.base.PFT^.pSuperTypeDeskriptor<>nil then begin
              SaveDecorators:=pfd^.base.PFT^.pSuperTypeDeskriptor.Decorators;
              SaveFastEditors:=pfd^.base.PFT^.pSuperTypeDeskriptor.FastEditors;
