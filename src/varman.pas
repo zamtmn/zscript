@@ -839,7 +839,7 @@ begin
     vtString:Result:=fieldnames[index].VString^;
     vtChar:Result:=fieldnames[index].VChar;
     vtAnsiString:Result:=string(fieldnames[index].VAnsiString);
-    vtUnicodeString:Result:=string(fieldnames[index].VUnicodeString);
+    vtUnicodeString:Result:=UnicodeString(fieldnames[index].VUnicodeString);
     else
       Result:=oldname;
   end;{case}
