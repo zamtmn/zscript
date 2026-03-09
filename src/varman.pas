@@ -212,7 +212,8 @@ typemanager=object(typemanagerdef)
                     function TypeName2PTD(const n: TInternalScriptString):PUserTypeDescriptor;virtual;
                     function SaveToMem(var membuf:TZctnrVectorBytes;PEntUnits:PTZctnrVectorPointer=nil):PUserTypeDescriptor;virtual;
                     function SavePasToMem(var membuf:TZctnrVectorBytes):PUserTypeDescriptor;virtual;abstract;
-                    procedure setvardesc(out vd: vardesk; const varname, username, typename: TInternalScriptString;_pinstance:pointer=nil);
+                    procedure setvardesc(out Avd:vardesk;const AVarName,AUserName,ATypeName:TInternalScriptString;APInstance:pointer=nil);overload;
+                    procedure setvardesc(out Avd:vardesk;const AVarName,AUserName:TInternalScriptString;AType:PUserTypeDescriptor;APInstance:pointer=nil);overload;
                     procedure free;virtual;
                     procedure CopyTo(source:PTSimpleUnit);virtual;
                     procedure CopyFrom(source:PTSimpleUnit);virtual;
@@ -1189,26 +1190,21 @@ begin
 end;
 
 
-
-
-
-procedure tsimpleunit.setvardesc(out vd: vardesk; const varname, username, typename: TInternalScriptString;_pinstance:pointer=nil);
-//var
-//  tpe:PUserTypeDescriptor;
+procedure tsimpleunit.setvardesc(out Avd:vardesk;const AVarName,AUserName,ATypeName:TInternalScriptString;APInstance:pointer=nil);
 begin
-  vd.name := readspace(varname);
-  vd.username := username;
-  vd.SetInstance(_pinstance);
-  //vd.Instance := _pinstance;
-  vd.data.ptd:={SysUnit.}TypeName2PTD(typename);
-
-  if vd.data.ptd=nil then
-                         begin
-                              zTraceLn(sysutils.format('{E}Type "%S" not defined in unit "%S"',[typename,self.Name]));
-
-                              //programlog.LogOutStr(sysutils.format('Type "%S" not defined in unit "%S"',[typename,self.Name]),lp_OldPos,LM_Error);
-                         end;
+  setvardesc(Avd,AVarName,AUserName,TypeName2PTD(ATypeName),APInstance);
+  if Avd.Data.ptd=nil then
+    zTraceLn(SysUtils.format('{E}Type "%S" not defined in unit "%S"',[ATypeName,self.Name]));
 end;
+
+procedure tsimpleunit.setvardesc(out Avd:vardesk;const AVarName,AUserName:TInternalScriptString;AType:PUserTypeDescriptor;APInstance:pointer=nil);
+begin
+  Avd.Name:=readspace(AVarName);
+  Avd.username:=AUserName;
+  Avd.SetInstance(APInstance);
+  Avd.Data.ptd:=AType;
+end;
+
 constructor varmanager.init;
 begin
   vardescarray.init(64);
