@@ -30,7 +30,6 @@ TFieldDescriptor=GZVector<FieldDescriptor>;
 PRecordDescriptor=^RecordDescriptor;
 RecordDescriptor=object(TUserTypeDescriptor)
                        Fields:{GDBOpenArrayOfData}TFieldDescriptor;
-                       Parent:PRecordDescriptor;
                        constructor init(const tname:string;pu:pointer);
                        function CreateProperties(const f:TzeUnitsFormat;mode:PDMode;PPDA:PTPropertyDeskriptorArray;const Name:TInternalScriptString;PCollapsed:Pointer;ownerattrib:TFieldAttrs;var bmode:Integer;const addr:Pointer;const ValKey,ValType:TInternalScriptString):PTPropertyDeskriptorArray;virtual;
                        procedure AddField(var fd:FieldDescriptor);
@@ -215,7 +214,6 @@ constructor RecordDescriptor.init;
 begin
      inherited init(0,tname,pu);
      fields.init(20);
-     parent:=nil;
 end;
 procedure FREEFIELD(const p:PFieldDescriptor);
 begin
@@ -227,7 +225,6 @@ begin
      inherited;
      fields.Freewithproc(freefield);
      fields.done;
-     parent:=nil;
 end;
 procedure RecordDescriptor.AddConstField;
 begin

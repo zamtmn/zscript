@@ -634,6 +634,7 @@ begin
   Getmem(Pointer(etd),sizeof(ObjectDescriptor));
   etd^.init(tname,@self);
   etd.PVMT:=ATypeOf;
+  etd.parent:=parentOTD;
 
   td:=GetTypeData(ATypeInfo);
   mf:=@td.ManagedFldCount;

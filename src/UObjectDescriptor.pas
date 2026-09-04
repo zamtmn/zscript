@@ -70,6 +70,7 @@ ObjectDescriptor=object(RecordDescriptor)
                        //LincedObjects:Boolean;
                        ColArray:TZctnrVectorBytes;
                        Properties:TPropertiesVector;
+                       Parent:PObjectDescriptor;
 
 
                        constructor init(const tname:string;pu:pointer);
@@ -95,11 +96,17 @@ ObjectDescriptor=object(RecordDescriptor)
                        procedure CorrectFieldsOffset(ti: PTypeInfo);
                        procedure CorrectCurrentFieldsOffset(td:PTypeData;var i:integer);
                        function GetFirstFieldIndex:Integer;virtual;
+                       function GetParentTypedef:PUserTypeDescriptor;virtual;
                  end;
 PTGenericVectorData=^TGenericVectorData;
 TGenericVectorData=GZVector<byte>;
 implementation
 uses varman;
+function ObjectDescriptor.GetParentTypedef:PUserTypeDescriptor;
+begin
+  result:=Parent;
+end;
+
 destructor MetodDescriptor.Done;
 begin
                       MetodName:='';
@@ -289,6 +296,7 @@ VMT=RECORD
 END;}
 begin
      inherited init(tname,pu);
+     Parent:=nil;
      SimpleMenods.init(20);
      Properties.init(20);
      pvmt:=nil;
