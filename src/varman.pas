@@ -45,13 +45,15 @@ type
                   source,user:String;
                   value:LongWord;
             end;
+
 const
+  cSuffixLeft='_Left';
+  cSuffixTop='_Top';
+  cSuffixWidth='_Width';
+  cSuffixHeight='_Height';
+
      SysVarN='sysvar';
      SysVarNSN='sysvarns';
-     SuffLeft='_Left';
-     SuffTop='_Top';
-     SuffWidth='_Width';
-     SuffHeight='_Height';
      identtype=1;
      ptype=2;
      recordtype=3;
@@ -285,15 +287,19 @@ function ObjOrRecordRead(TranslateFunc:TTranslateFunction;var f: TZctnrVectorByt
 function GetPVarMan: Pointer; export;
 function FindCategory(const category:TInternalScriptString;var catname:TInternalScriptString):Pointer;
 procedure SetCategoryCollapsed(const category:TInternalScriptString;value:Boolean);
-function GetBoundsFromSavedUnit(const name:string;w,h:integer):Trect;
-procedure StoreBoundsToSavedUnit(const name:string;tr:Trect);
-procedure SetTypedDataVariable(out TypedTataVariable:THardTypedData;pTypedTata:pointer;const TypeName:string);
-function GetIntegerFromSavedUnit(const name,suffix:string;def,min,max:integer):integer;
-function GetAnsiStringFromSavedUnit(const name,suffix:ansistring;const def:ansistring):ansistring;
-function GetBooleanFromSavedUnit(const name,suffix:ansistring;def:Boolean):Boolean;
-procedure StoreIntegerToSavedUnit(const name,suffix:string;value:integer);
-procedure StoreBooleanToSavedUnit(const name,suffix:string;value:Boolean);
-procedure StoreAnsiStringToSavedUnit(const name,suffix:string;const value:string);
+
+function GetBoundsFromUnit(var AUnit:TSimpleUnit; const AName:string;AMaxWidth,AMaxHeight:integer):TRect;
+function GetIntegerFromUnit(var AUnit:TSimpleUnit;const AName,ASuffix:AnsiString;def,min,max:integer):Integer;
+function GetAnsiStringFromUnit(var AUnit:TSimpleUnit; const AName,ASuffix:AnsiString;const def:ansistring):AnsiString;
+function GetBooleanFromUnit(var AUnit:TSimpleUnit; const AName,ASuffix:AnsiString;def:Boolean):Boolean;
+
+procedure SetTypedDataVariable(out TypedTataVariable:THardTypedData;pTypedTata:pointer;const TypeName:String);
+
+procedure StoreBoundsToUnit(var AUnit:TSimpleUnit; const AName:AnsiString;ARect:Trect);
+procedure StoreIntegerToUnit(var AUnit:TSimpleUnit; const AName,ASuffix:AnsiString;AValue:integer);
+procedure StoreBooleanToUnit(var AUnit:TSimpleUnit; const AName,ASuffix:AnsiString;AValue:Boolean);
+procedure StoreAnsiStringToUnit(var AUnit:TSimpleUnit; const AName,ASuffix:AnsiString;const AValue:AnsiString);
+
 procedure RegisterVarCategory(const CategoryName,CategoryUserName:string;TranslateFunc:TTranslateFunction);
 implementation
 uses uzsbLexParser;
@@ -333,12 +339,12 @@ begin
                                   else
                                       result:=value;
 end;
-function GetIntegerFromSavedUnit(const name,suffix:string;def,min,max:integer):integer;
+function GetIntegerFromUnit(var AUnit:TSimpleUnit;const AName,ASuffix:string;def,min,max:integer):integer;
 var
   pvd:pvardesk;
   pint:PInteger;
 begin
-  pvd:=SavedUnit.FindValue(name+suffix);
+  pvd:=AUnit.FindValue(AName+ASuffix);
   if assigned(pvd) then begin
     pint:=pvd.data.Addr.Instance;
     if assigned(pint)then begin
@@ -349,12 +355,12 @@ begin
   end else
     result:=def;
 end;
-function GetAnsiStringFromSavedUnit(const name,suffix:ansistring;const def:ansistring):ansistring;
+function GetAnsiStringFromUnit(var AUnit:TSimpleUnit; const AName,ASuffix:ansistring;const def:ansistring):ansistring;
 var
   pvd:pvardesk;
   pstr:PAnsiString;
 begin
-  pvd:=SavedUnit.FindValue(name+suffix);
+  pvd:=AUnit.FindValue(AName+ASuffix);
   if assigned(pvd) then begin
     pstr:=pvd.data.Addr.Instance;
     if assigned(pstr)then begin
@@ -364,12 +370,12 @@ begin
   end else
     result:=def;
 end;
-function GetBooleanFromSavedUnit(const name,suffix:ansistring;def:Boolean):Boolean;
+function GetBooleanFromUnit(var AUnit:TSimpleUnit; const AName,ASuffix:ansistring;def:Boolean):Boolean;
 var
   pvd:pvardesk;
   pbool:PBoolean;
 begin
-  pvd:=SavedUnit.FindValue(name+suffix);
+  pvd:=AUnit.FindValue(AName+ASuffix);
   if assigned(pvd) then begin
     pbool:=pvd.data.Addr.Instance;
     if assigned(pbool)then begin
@@ -379,118 +385,66 @@ begin
   end else
     result:=def;
 end;
-procedure StoreIntegerToSavedUnit(const name,suffix:string;value:integer);
+procedure StoreIntegerToUnit(var AUnit:TSimpleUnit; const AName,ASuffix:AnsiString;AValue:integer);
 var
    pint:PInteger;
    pvd:pvardesk;
    vn:TInternalScriptString;
 begin
-     vn:=name+suffix;
-     pvd:=SavedUnit.FindValue(vn);
+     vn:=AName+ASuffix;
+     pvd:=AUnit.FindValue(vn);
      if not assigned(pvd) then
-       pint:=SavedUnit.CreateVariable(vn,'Integer').data.Addr.instance
+       pint:=AUnit.CreateVariable(vn,'Integer').data.Addr.instance
      else
        pint:=pvd^.data.Addr.Instance;
-     pint^:=value;
+     pint^:=AValue;
 end;
-procedure StoreBooleanToSavedUnit(const name,suffix:string;value:Boolean);
+procedure StoreBooleanToUnit(var AUnit:TSimpleUnit; const AName,ASuffix:AnsiString;AValue:Boolean);
 var
    pbool:PBoolean;
    pvd:pvardesk;
    vn:TInternalScriptString;
 begin
-     vn:=name+suffix;
-     pvd:=SavedUnit.FindValue(vn);
+     vn:=AName+ASuffix;
+     pvd:=AUnit.FindValue(vn);
      if not assigned(pvd) then
-       pbool:=SavedUnit.CreateVariable(vn,'Boolean').data.Addr.instance
+       pbool:=AUnit.CreateVariable(vn,'Boolean').data.Addr.instance
      else
        pbool:=pvd^.data.Addr.Instance;
-     pbool^:=value;
+     pbool^:=AValue;
 end;
-procedure StoreAnsiStringToSavedUnit(const name,suffix:string;const value:string);
+procedure StoreAnsiStringToUnit(var AUnit:TSimpleUnit; const AName,ASuffix:AnsiString;const AValue:AnsiString);
 var
    pas:PAnsiString;
    pvd:pvardesk;
    vn:TInternalScriptString;
 begin
-     vn:=name+suffix;
-     pvd:=SavedUnit.FindValue(vn);
+     vn:=AName+ASuffix;
+     pvd:=AUnit.FindValue(vn);
      if not assigned(pvd) then
-       pas:=SavedUnit.CreateVariable(vn,'AnsiString').data.Addr.instance
+       pas:=AUnit.CreateVariable(vn,'AnsiString').data.Addr.instance
      else
        pas:=pvd^.data.Addr.Instance;
-     pas^:=value;
+     pas^:=AValue;
 end;
-function GetBoundsFromSavedUnit(const name:string;w,h:integer):Trect;
-var
-   pint:PInteger;
-   pvd:pvardesk;
+
+function GetBoundsFromUnit(var AUnit:TSimpleUnit;const AName:string;AMaxWidth,AMaxHeight:integer):Trect;
+const
+   cDefBounds:trect=(Left:0;Top:0;Right:100;Bottom:100);
 begin
-     result:=rect(0,0,100,100);
-     pvd:=SavedUnit.FindValue(name+SuffLeft);
-     if assigned(pvd) then begin
-       pint:=pvd.data.Addr.Instance;
-       if assigned(pint)then
-                            result.Left:=pint^;
-       result.Left:=setfrominterval(result.Left,0,w);
-     end;
-     pvd:=SavedUnit.FindValue(name+SuffTop);
-     if assigned(pvd) then begin
-       pint:=pvd.data.Addr.Instance;
-       if assigned(pint)then
-                            result.Top:=pint^;
-       result.Top:=setfrominterval(result.Top,0,h);
-     end;
-     pvd:=SavedUnit.FindValue(name+SuffWidth);
-     if assigned(pvd) then begin
-       pint:=pvd.data.Addr.Instance;
-       if assigned(pint)then
-                            result.Right:=result.Left+pint^;
-     end;
-     pvd:=SavedUnit.FindValue(name+SuffHeight);
-     if assigned(pvd) then begin
-       pint:=pvd.data.Addr.Instance;
-       if assigned(pint)then
-                            result.Bottom:=result.Top+pint^;
-     end;
+  result:=rect(0,0,100,100);
+  result.Left:=GetIntegerFromUnit(AUnit,AName,cSuffixLeft,cDefBounds.left,0,AMaxWidth);
+  result.Top:=GetIntegerFromUnit(AUnit,AName,cSuffixTop,cDefBounds.Top,0,AMaxHeight);
+  result.Right:=result.Left+GetIntegerFromUnit(AUnit,AName,cSuffixWidth,cDefBounds.Width,0,AMaxWidth);
+  result.Bottom:=result.Top+GetIntegerFromUnit(AUnit,AName,cSuffixHeight,cDefBounds.Bottom,0,AMaxHeight);
 end;
-procedure StoreBoundsToSavedUnit(const name:string;tr:Trect);
-var
-   pint:PInteger;
-   vn:TInternalScriptString;
-   pvd:pvardesk;
+
+procedure StoreBoundsToUnit(var AUnit:TSimpleUnit; const AName:AnsiString;ARect:Trect);
 begin
-     vn:=name+SuffLeft;
-     pvd:=SavedUnit.FindValue(vn);
-     if assigned(pvd) then
-       pint:=SavedUnit.FindValue(vn).data.Addr.Instance
-     else
-       pint:=SavedUnit.CreateVariable(vn,'Integer').data.Addr.instance;
-     pint^:=tr.Left;
-
-     vn:=name+SuffTop;
-     pvd:=SavedUnit.FindValue(vn);
-     if assigned(pvd) then
-       pint:=SavedUnit.FindValue(vn).data.Addr.Instance
-     else
-       pint:=SavedUnit.CreateVariable(vn,'Integer').data.Addr.instance;
-     pint^:=tr.Top;
-
-     vn:=name+SuffWidth;
-     pvd:=SavedUnit.FindValue(vn);
-     if assigned(pvd) then
-       pint:=SavedUnit.FindValue(vn).data.Addr.Instance
-     else
-       pint:=SavedUnit.CreateVariable(vn,'Integer').data.Addr.instance;
-     pint^:=tr.Right-tr.Left;
-
-     vn:=name+SuffHeight;
-     pvd:=SavedUnit.FindValue(vn);
-     if assigned(pvd) then
-       pint:=SavedUnit.FindValue(vn).data.Addr.Instance
-     else
-       pint:=SavedUnit.CreateVariable(vn,'Integer').data.Addr.instance;
-     pint^:=tr.Bottom-tr.Top;
+  StoreIntegerToUnit(AUnit,AName,cSuffixLeft,ARect.Left);
+  StoreIntegerToUnit(AUnit,AName,cSuffixTop,ARect.Top);
+  StoreIntegerToUnit(AUnit,AName,cSuffixWidth,ARect.Right-ARect.Left);
+  StoreIntegerToUnit(AUnit,AName,cSuffixHeight,ARect.Bottom-ARect.Top);
 end;
 procedure TSimpleUnit.CopyTo;
 var
