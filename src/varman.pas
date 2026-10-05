@@ -186,8 +186,8 @@ typemanager=object(typemanagerdef)
                    function findvardesc(const varname:TInternalScriptString):pvardesk;virtual;
                    function findvardescbyinst(varinst:Pointer):pvardesk;virtual;
                    function findvardescbytype(pt:PUserTypeDescriptor):pvardesk;virtual;
-                   function CreateVariable(const varname:TInternalScriptString; var vd:vardesk;attr:TVariableAttributes=0):pvardesk;virtual;
-                   function CreateVariable2(const varname:TInternalScriptString; var vd:vardesk;attr:TVariableAttributes=0):TInVectorAddr;virtual;
+                   function CreateVariable(const varname:TInternalScriptString; var vd:vardesk;attr:TVarAttrs=[]):pvardesk;virtual;
+                   function CreateVariable2(const varname:TInternalScriptString; var vd:vardesk;attr:TVarAttrs=[]):TInVectorAddr;virtual;
                    procedure RemoveVariable(pvd:pvardesk);virtual;
                    function findvardesc2(const varname:TInternalScriptString):TInVectorAddr;virtual;
                    function findfieldcustom(var pdesc: pByte; var offset: Integer;var tc:PUserTypeDescriptor; const nam: String): Boolean;virtual;
@@ -1179,7 +1179,7 @@ begin
 
      //programlog.LogOutStr('end;',lp_DecPos,LM_Trace);
 end;
-function varmanager.CreateVariable(const varname: TInternalScriptString; var vd: vardesk;attr:TVariableAttributes=0):pvardesk;
+function varmanager.CreateVariable(const varname: TInternalScriptString; var vd: vardesk;attr:TVarAttrs=[]):pvardesk;
 var
   size: LongWord;
   i:TArrayIndex;
@@ -1202,7 +1202,7 @@ begin
        //KillString(vd.name);
        //KillString(vd.username);
 end;
-function varmanager.CreateVariable2(const varname:TInternalScriptString; var vd:vardesk;attr:TVariableAttributes=0):TInVectorAddr;
+function varmanager.CreateVariable2(const varname:TInternalScriptString; var vd:vardesk;attr:TVarAttrs=[]):TInVectorAddr;
 var
   size: LongWord;
   //i:TArrayIndex;

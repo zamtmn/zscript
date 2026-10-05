@@ -40,7 +40,7 @@ RecordDescriptor=object(TUserTypeDescriptor)
                        procedure CopyTo(RD:PTUserTypeDescriptor);
                        //function Serialize(PInstance:Pointer;SaveFlag:Word;var membuf:PTZctnrVectorBytes;var  linkbuf:PGDBOpenArrayOfTObjLinkRecord;var sub:integer):integer;virtual;
                        //function DeSerialize(PInstance:Pointer;SaveFlag:Word;var membuf:TZctnrVectorBytes;linkbuf:PGDBOpenArrayOfTObjLinkRecord):integer;virtual;
-                       function GetTypeAttributes:TTypeAttr;virtual;
+                       function GetTypeAttributes:TTypeAttrs;virtual;
                        procedure MagicFreeInstance(PInstance:Pointer);virtual;
                        destructor Done;virtual;
                        procedure SavePasToMem(var membuf:TZctnrVectorBytes;PInstance:Pointer;const prefix:TInternalScriptString);virtual;
@@ -302,7 +302,7 @@ begin
 end;
 function RecordDescriptor.GetTypeAttributes;
 begin
-     result:=TA_COMPOUND;
+     result:=[TA_COMPOUND];
 end;
 function RecordDescriptor.CreateProperties(const f:TzeUnitsFormat;mode:PDMode;PPDA:PTPropertyDeskriptorArray;const Name:TInternalScriptString;PCollapsed:Pointer;ownerattrib:TFieldAttrs;var bmode:Integer;const addr:Pointer;const ValKey,ValType:TInternalScriptString):PTPropertyDeskriptorArray;
 var
@@ -373,15 +373,15 @@ begin
       if tname='' then
         tname:=pvd^.name;
       taa:=pvd^.data.Addr.Instance;
-      if (pvd^.attrib and vda_different)>0 then
+      if vda_different in pvd^.attrib then
         tw:=[fldaDifferent]
       else
         tw:=[];
-      if (pvd^.attrib and vda_approximately)>0 then
+      if vda_approximately in pvd^.attrib then
         tw:=tw+[fldaApproximately];
-      if (pvd^.attrib and vda_RO)>0 then
+      if vda_RO in pvd^.attrib then
         tw:=tw+[fldaReadOnly];
-      if (pvd^.attrib and vda_colored1)>0 then
+      if vda_colored1 in pvd^.attrib then
         tw:=tw+[fldaColored1];
       oldppda:=ppda;
       if i>0 then begin

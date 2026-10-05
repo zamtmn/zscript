@@ -47,16 +47,16 @@ EnumDescriptor=object(TUserTypeDescriptor)
                      function GetValueAsString(pinstance:Pointer):TInternalScriptString;virtual;
                      function GetUserValueAsString(pinstance:Pointer):TInternalScriptString;virtual;
                      destructor Done;virtual;
-                     function GetTypeAttributes:TTypeAttr;virtual;
+                     function GetTypeAttributes:TTypeAttrs;virtual;
                      procedure SetValueFromString(PInstance:Pointer; const _Value:TInternalScriptString);virtual;
                end;
 var
     EnumGlobalEditor:TCreateEditorFunc;
 implementation
 //uses log;
-function EnumDescriptor.GetTypeAttributes:TTypeAttr;
+function EnumDescriptor.GetTypeAttributes:TTypeAttrs;
 begin
-     result:=ta_enum;
+     result:=[ta_enum];
 end;
 destructor EnumDescriptor.done;
 begin

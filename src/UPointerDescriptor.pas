@@ -38,7 +38,7 @@ type
     //function Serialize(PInstance:Pointer;SaveFlag:Word;var membuf:PTZctnrVectorBytes;var  linkbuf:PGDBOpenArrayOfTObjLinkRecord;var sub:integer):integer;virtual;
     //function DeSerialize(PInstance:Pointer;SaveFlag:Word;var membuf:TZctnrVectorBytes;linkbuf:PGDBOpenArrayOfTObjLinkRecord):integer;virtual;
     procedure Format;virtual;
-    function GetTypeAttributes:TTypeAttr;virtual;
+    function GetTypeAttributes:TTypeAttrs;virtual;
     function CreateEditor(TheOwner:TPropEditorOwner;rect:trect{x,y,w,h:Integer};pinstance:pointer;psa:PTZctnrVectorStrings;FreeOnLostFocus:boolean; const InitialValue:TInternalScriptString;preferedHeight:integer;f:TzeUnitsFormat):TEditorDesc{TPropEditor};virtual;
     procedure SavePasToMem(var membuf:TZctnrVectorBytes;PInstance:Pointer;const prefix:TInternalScriptString);virtual;
     destructor Done;virtual;
@@ -104,7 +104,7 @@ begin
     if assigned(ta) then
                         begin
 
-                             if (PTUserTypeDescriptor(PUserTypeDescriptor((TypeOf)))^.GetTypeAttributes and TA_COMPOUND)=0 then
+                             if not(TA_COMPOUND in PTUserTypeDescriptor(PUserTypeDescriptor((TypeOf)))^.GetTypeAttributes) then
                                                                                                                         PTUserTypeDescriptor(PUserTypeDescriptor((TypeOf)))^.CreateProperties(f,PDM_Field,PPDA,name,PCollapsed,ownerattrib,bmode,ta,valkey,valtype)
                                                                                                                     else
                                                                                                                     begin
@@ -174,7 +174,7 @@ begin
 end;
 function GDBPointerDescriptor.GetTypeAttributes;
 begin
-     result:=TA_COMPOUND;
+     result:=[TA_COMPOUND];
 end;
 
 begin

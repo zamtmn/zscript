@@ -685,7 +685,7 @@ var
 begin
   result := 0;
   if rez.data.PTD<>nil then
-    if ((rez.data.PTD.GetTypeAttributes and ta_enum)>0) and
+    if (ta_enum in rez.data.PTD.GetTypeAttributes)and
        (hrez.data.ptd=nil) and
        (hrez.name<>'') then
                            begin

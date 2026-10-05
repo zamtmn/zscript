@@ -89,7 +89,7 @@ ObjectDescriptor=object(RecordDescriptor)
                        //function Serialize(PInstance:Pointer;SaveFlag:Word;var membuf:PTZctnrVectorBytes;var  linkbuf:PGDBOpenArrayOfTObjLinkRecord;var sub:integer):integer;virtual;
                        //function DeSerialize(PInstance:Pointer;SaveFlag:Word;var membuf:TZctnrVectorBytes;linkbuf:PGDBOpenArrayOfTObjLinkRecord):integer;virtual;
                        destructor Done;virtual;
-                       function GetTypeAttributes:TTypeAttr;virtual;
+                       function GetTypeAttributes:TTypeAttrs;virtual;
                        procedure SavePasToMem(var membuf:TZctnrVectorBytes;PInstance:Pointer;const prefix:TInternalScriptString);virtual;
                        procedure MagicFreeInstance(PInstance:Pointer);virtual;
                        procedure RegisterTypeinfo(ti:PTypeInfo);virtual;
@@ -595,7 +595,7 @@ begin
 end;
 function ObjectDescriptor.GetTypeAttributes;
 begin
-     result:=TA_COMPOUND or TA_OBJECT;
+     result:=[TA_COMPOUND,TA_OBJECT];
 end;
 function processPROPERTYppd({ppd:PPropertyDeskriptor;}pp:PPropertyDescriptor):Pointer;
 begin
