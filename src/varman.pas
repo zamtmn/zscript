@@ -154,7 +154,7 @@ TVMT2PTD=TMyMapGen<Pointer,PObjectDescriptor>;
 TZctnrVectorPUserTypeDescriptors=object(GZVectorPData<PUserTypeDescriptor>)
                            end;
 ptypemanager=^typemanager;
-typemanager=object(typemanagerdef)
+typemanager=object//(typemanagerdef)
                   protected
                   n2i:TNameToIndex;
                   aliases:TTypeAliases;
@@ -179,7 +179,7 @@ typemanager=object(typemanagerdef)
 
   TvarDescArray=GZVector<vardesk>;
   {GISTEROBJECTWITHOUTCONSTRUCTORTYPE varmanager}
-  varmanager=object(varmanagerdef)
+  varmanager=object//(varmanagerdef)
               vardescarray:TvarDescArray;
               vararray:TZctnrAlignedVectorBytes;
                    constructor init;
@@ -1291,7 +1291,7 @@ var parseerror{,parsesuberror}:Boolean;
   pd:PropertyDescriptor;
   //a:word;
   //vv:smallint;
-  mattr:GDBMetodModifier;
+  mattr:TMModifiers;
   //md:MetodDescriptor;
   //pf:PFieldDescriptor;
 //function getla
@@ -1318,19 +1318,19 @@ begin
            destructormember:
                           begin
                                state:=metods;
-                               mattr:=0;
+                               mattr:=[];
                                case typ of
                             functionmember:begin
-                                                mattr:=m_function;
+                                                mattr:=[mm_function];
                                            end;
                            proceduremember:begin
-                                                mattr:=m_procedure;
+                                                mattr:=[mm_procedure];
                                            end;
                          constructormember:begin
-                                                mattr:=m_constructor;
+                                                mattr:=[mm_constructor];
                                            end;
                           destructormember:begin
-                                                mattr:=m_destructor;
+                                                mattr:=[mm_destructor];
                                            end;
                                end;
                                //oldline:=line;
@@ -1355,7 +1355,7 @@ begin
                                parseresult:=getpattern(@parsefuncmodss,maxmod,line,typ); // длдл
                                case typ of
                                 mod_virtual:begin
-                                                 mattr:=mattr or m_virtual;
+                                                 mattr:=mattr+[mm_virtual];
                                             end;
 //                               mod_abstract:begin
 //                                                 mattr:=mattr;

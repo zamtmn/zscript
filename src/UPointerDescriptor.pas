@@ -160,7 +160,6 @@ begin
                              ppd^.SubNode:=nil;
                              ppd^.valueAddres:={addr}ta;
                              ppd^.value:=rsUnassigned;
-                             ppd^.HelpPointer:=nil;
                         end;
      if bm<>bmode then
      bmode:=bm;

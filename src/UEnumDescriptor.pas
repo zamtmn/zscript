@@ -182,13 +182,13 @@ end;
 function EnumDescriptor.CreateEditor;
 begin
      result:=inherited;
-     if (result.editor=nil)and(result.mode=TEM_Nothing)then
+     if (result.editor=nil)and(result.mode=EM_Nothing)then
      if assigned(EnumGlobalEditor) then
                                          result:=EnumGlobalEditor(TheOwner,rect,pinstance,psa,FreeOnLostFocus,initialvalue,@self,preferedHeight,f)
                                    else
                                        begin
                                            result.editor:=nil;
-                                           result.mode:=TEM_Nothing;
+                                           result.mode:=EM_Nothing;
                                        end;
 end;
 begin

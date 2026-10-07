@@ -40,9 +40,17 @@ GDBOperandDesc=record
                      PTD:PUserTypeDescriptor;
                      StoreMode:GDBTOperandStoreMode;
                end;
-GDBMetodModifier=Word;
+//GDBMetodModifier=Word;
 TOperandsVector=GZVector<GDBOperandDesc>;
-PMetodDescriptor=^MetodDescriptor;
+
+SimpleProcOfObj=procedure of object;
+SimpleProcOfObjDouble=procedure(arg:double) of object;
+SimpleFuncOfObjDouble=function :double of object;
+
+
+TMModifier=(mm_procedure,mm_function,mm_constructor,mm_destructor,mm_virtual);
+TMModifiers=set of TMModifier;
+
 MetodDescriptor=object
                       objname:String;
                       MetodName:String;
@@ -50,14 +58,24 @@ MetodDescriptor=object
                       Operands:TOperandsVector;
                       ResultPTD:PUserTypeDescriptor;
                       MetodAddr:Pointer;
-                      Attributes:GDBMetodModifier;
+                      Attributes:TMModifiers;
                       punit:pointer;
                       NameHash:LongWord;
-                      constructor init(objn,mn,dt:String;ma:Pointer;attr:GDBMetodModifier;pu:pointer);
+                      constructor init(objn,mn,dt:String;ma:Pointer;attr:TMModifiers;pu:pointer);
                       destructor Done;virtual;
                 end;
+PMetodDescriptor=^MetodDescriptor;
+
 simpleproc=procedure of object;
 TSimpleMenodsVector=GZVectorObjects<MetodDescriptor>;
+
+PropertyDescriptor=record
+  base:BaseDescriptor;
+  r,w:string;
+  Collapsed:boolean;
+end;
+PPropertyDescriptor=^PropertyDescriptor;
+
 TPropertiesVector=GZVector<PropertyDescriptor>;
 
 PObjectDescriptor=^ObjectDescriptor;
@@ -79,7 +97,7 @@ ObjectDescriptor=object(RecordDescriptor)
                        procedure RegisterVMT(pv:Pointer);
                        procedure RegisterDefaultConstructor(pv:Pointer);
                        procedure RegisterObject(pv,pc:Pointer);overload;
-                       procedure AddMetod(const objname,mn,dt:TInternalScriptString;ma:Pointer;attr:GDBMetodModifier);
+                       procedure AddMetod(const objname,mn,dt:TInternalScriptString;ma:Pointer;attr:TMModifiers);
                        procedure AddProperty(var pd:PropertyDescriptor);
                        function FindMetod(const mn:TInternalScriptString;obj:Pointer):PMetodDescriptor;virtual;
                        function FindMetodAddr(const mn:TInternalScriptString;obj:Pointer;out pmd:pMetodDescriptor):TMethod;virtual;
@@ -115,7 +133,7 @@ begin
                       Operands.done;
                       ResultPTD:=nil;
                       MetodAddr:=nil;
-                      Attributes:=0;
+                      Attributes:=[];
                       punit:=nil;
 end;
 constructor MetodDescriptor.init;
@@ -314,7 +332,7 @@ begin
      if pmd=nil then
                     begin
                          pcmd:=pointer(SimpleMenods.CreateObject);
-                         if (attr and m_virtual)=0 then
+                         if not(mm_virtual in attr) then
                                                        pcmd.init(objname,mn,dt,ma,attr,punit)
                                                    else
                                                        begin
@@ -326,7 +344,7 @@ begin
                     end
                 else
                     begin
-                         if (attr and m_virtual)=0 then
+                         if not(mm_virtual in attr) then
                                                         begin
 //                                                             if uppercase(mn)='FORMAT' then
 //                                                                                           mn:=mn;
@@ -415,7 +433,7 @@ begin
      if pmd<>nil then
      begin
      result.Data:=obj;
-     if (pmd^.Attributes and m_virtual)<>0 then
+     if mm_virtual in pmd^.Attributes then
                                             begin
                                                  result.Code:=
                                                  ppointer(PtrUInt(self.PVMT)+
@@ -433,130 +451,112 @@ begin
      end;
 end;
 procedure ObjectDescriptor.SimpleRunMetodWithArg(const mn:TInternalScriptString;obj,arg:Pointer);
-var pmd:pMetodDescriptor;
-    tm:tmethod;
+var
+  pmd:pMetodDescriptor;
+  tm:tmethod;
 begin
-     tm:=FindMetodAddr(mn,obj,pmd);
-     if pmd=nil then exit;
-     case (pmd^.Attributes)and(not m_virtual) of
-     m_procedure:
-                 begin
-                      SimpleProcOfObjDouble(tm)(PDouble(arg)^);
-                 end;
-     m_function:PDouble(arg)^:=SimpleFuncOfObjDouble(tm);
-     end;
+  tm:=FindMetodAddr(mn,obj,pmd);
+  if pmd=nil then
+    exit;
+  if (pmd^.Attributes*[mm_procedure])<>[] then begin
+    SimpleProcOfObjDouble(tm)(PDouble(arg)^);
+  end else if (pmd^.Attributes*[mm_function])<>[] then
+    PDouble(arg)^:=SimpleFuncOfObjDouble(tm);
 end;
 
 procedure ObjectDescriptor.RunMetod;
-var pmd:pMetodDescriptor;
-    tm:tmethod;
-    {$IFDEF fpc}
-    p:Pointer;
-    ppp:pointer;
-    {$ENDIF}
+var
+  pmd:pMetodDescriptor;
+  tm:tmethod;
+ {$IFDEF fpc}
+  p:Pointer;
+  ppp:pointer;
+ {$ENDIF}
 begin
-      {$IFDEF fpc}
-      ppp:=@self;
-      p:=pvmt;
-      {$ENDIF}
-      //pmd:=findmetod(mn,obj);
-      tm:=FindMetodAddr(mn,obj,pmd);
-      if pmd=nil then exit;
-      {tm.Data:=obj;
-      if (pmd^.Attributes and m_virtual)<>0 then
-                                             begin
-                                                  tm.Code:=
-                                                  ppointer(PtrInt(self.PVMT)+
-                                                  PtrInt(pmd^.MetodAddr))^;
-                                             end
-                                         else
-                                             begin
-                                                  tm.Code:=pmd^.MetodAddr;
-                                             end;
-      deb:=(pmd^.Attributes)and(not m_virtual);}
-      case (pmd^.Attributes)and(not m_virtual) of
-      m_procedure,m_destructor:
-                  begin
-                       {$ifdef WIN64}
-                       //tm.Code:=ppointer(PtrInt(self.PVMT)+
-                       //         PtrInt(pmd^.MetodAddr)+12)^;
-                       {$endif WIN64}
-                  SimpleProcOfObj(tm);
-                  (*asm
-                                                                {$ifdef WINDOWS}
-                                                                mov rax,[obj]//win64
-                                                                mov rcx,[obj]//win64
-                                                                mov rax,[rax]
-                                                                call tm.Code//win64
-                                                                {$endif WINDOWS}
-                  end;*)
-                  end;
-      m_function:SimpleProcOfObj(tm);
-      m_constructor:
-                                                        begin
-                                                             //CallVoidConstructor(Ctor: codepointer; Obj: pointer; VMT: pointer): pointer;inline;
-                                                             CallVoidConstructor(tm.Code,obj,pvmt);
-                                                             (*
-                                                             {$IFDEF DELPHI}
-                                                             begin
-                                                             asm
-                                                                mov eax,[self]
-                                                                mov edx,[eax+pvmt]
-                                                                mov eax,[obj]
-                                                             end;
-                                                             SimpleProcOfObj(tm);
-                                                             end;
-                                                             {$ENDIF}
-                                                             {$IFDEF fpc}
-                                                             {$ifdef CPU32}
-                                                             begin
-                                                             asm
-                                                                mov eax,[ppp]
-                                                                mov edx,[p]
-                                                                mov eax,[obj]
-                                                                call tm.Code
-                                                             end;
-                                                             //simpleproc(tm);
-                                                              end;
-                                                            {$endif CPU32}
-                                                            {$ifdef CPU64}
-                                                             begin
-                                                             asm
-                                                                {mov rax,[ppp]
-                                                                mov rdx,[p]
-                                                                mov rax,[obj]}
-                                                                {mov rsi,[obj]
-                                                                mov rdi,[p]}
+ {$IFDEF fpc}
+  ppp:=@self;
+  p:=pvmt;
+ {$ENDIF}
+  tm:=FindMetodAddr(mn,obj,pmd);
+  if pmd=nil then exit;
+  if (pmd^.Attributes*[mm_procedure,mm_destructor])<>[]then begin
+ {$ifdef WIN64}
+  //tm.Code:=ppointer(PtrInt(self.PVMT)+
+  //         PtrInt(pmd^.MetodAddr)+12)^;
+ {$endif WIN64}
+  SimpleProcOfObj(tm);
+  (*asm
+    {$ifdef WINDOWS}
+    mov rax,[obj]//win64
+    mov rcx,[obj]//win64
+    mov rax,[rax]
+    call tm.Code//win64
+    {$endif WINDOWS}
+  end;*)
+  end else if(pmd^.Attributes*[mm_function])<>[]then
+      SimpleProcOfObj(tm)
+  else if(pmd^.Attributes*[mm_constructor])<>[]then begin
+    //CallVoidConstructor(Ctor: codepointer; Obj: pointer; VMT: pointer): pointer;inline;
+    CallVoidConstructor(tm.Code,obj,pvmt);
+    (*
+    {$IFDEF DELPHI}
+    begin
+    asm
+      mov eax,[self]
+      mov edx,[eax+pvmt]
+      mov eax,[obj]
+    end;
+    SimpleProcOfObj(tm);
+    end;
+    {$ENDIF}
+    {$IFDEF fpc}
+    {$ifdef CPU32}
+    begin
+    asm
+      mov eax,[ppp]
+      mov edx,[p]
+      mov eax,[obj]
+      call tm.Code
+    end;
+    //simpleproc(tm);
+    end;
+    {$endif CPU32}
+    {$ifdef CPU64}
+    begin
+    asm
+      {mov rax,[ppp]
+      mov rdx,[p]
+      mov rax,[obj]}
+      {mov rsi,[obj]
+      mov rdi,[p]}
 
-                                                                //{$ifdef LINUX}
-                                                                //mov rdi,[obj]//lin64
-                                                                //mov rsi,[p]//lin64
-                                                                //call tm.Code//lin64
-                                                                //{$endif LINUX}
+      //{$ifdef LINUX}
+      //mov rdi,[obj]//lin64
+      //mov rsi,[p]//lin64
+      //call tm.Code//lin64
+      //{$endif LINUX}
 
-                                                                {$ifdef WIN64}
-                                                                mov rcx,[obj]//win64
-                                                                mov rdx,[p]//win64
-                                                                call tm.Code//win64
-                                                                {$else}
-                                                                mov rdi,[obj]//lin64
-                                                                mov rsi,[p]//lin64
-                                                                call tm.Code//lin64
-                                                                {$endif WIN64}
+      {$ifdef WIN64}
+      mov rcx,[obj]//win64
+      mov rdx,[p]//win64
+      call tm.Code//win64
+      {$else}
+      mov rdi,[obj]//lin64
+      mov rsi,[p]//lin64
+      call tm.Code//lin64
+      {$endif WIN64}
 
-                                                                {mov rax,[ppp]
-                                                                mov rdx,[p]
-                                                                mov rax,[obj]}
+      {mov rax,[ppp]
+      mov rdx,[p]
+      mov rax,[obj]}
 
-                                                             end;
-                                                             //simpleproc(tm);
-                                                             //self.initnul;
-                                                              end;
-                                                            {$endif CPU64}
-                                                            {$ENDIF}*)
-                                                        end;
-                  end;
-        //if parent<>nil then PobjectDescriptor(parent)^.RunMetod(mn,obj);
+    end;
+    //simpleproc(tm);
+    //self.initnul;
+    end;
+    {$endif CPU64}
+    {$ENDIF}*)
+  end;
 end;
 procedure ObjectDescriptor.CopyTo(RD:PTUserTypeDescriptor);
 var pcmd:PMetodDescriptor;
@@ -642,8 +642,6 @@ begin
                                        begin
                                             ppd:=pointer(ppda^.getDataMutable(abs(bmode)-1));
                                             ppd:=PPointer(ppd)^;
-                                            ppd.r:=pp.r;
-                                            ppd.w:=pp.w;
                                             p:=ppd^.valueAddres;
                                        end;
            ObjectDescriptor.SimpleRunMetodWithArg(pp.r,baddr,p);
