@@ -728,7 +728,7 @@ begin
        TempPUTD:=TypeName2PTD(ti^.Name);
        if TempPUTD<>nil then begin
          Getmem(result,sizeof(GDBSinonimDescriptor));
-         PGDBSinonimDescriptor(result)^.init(ti^.Name,ATypeName,@self);
+         PGDBSinonimDescriptor(result)^.init2({ti^.Name}TempPUTD,ATypeName,@self);
          InterfaceTypes.AddTypeByPP(@result);
        end else
          AddTypealias(ATypeName,ti^.Name);
